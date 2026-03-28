@@ -56,3 +56,15 @@ vcpkg_installed
 flutter/lib/generated_plugin_registrant.dart
 libsciter.dylib
 flutter/web/
+
+# === 王国民添加
+build*.bat
+libs/portable/app_metadata.toml
+flutter/pubspec.lock
+
+!flutter/assets/logo.png
+!flutter/assets/icon.png
+!flutter/assets/icon.svg
+!flutter/assets/rustdesk.png
+
+

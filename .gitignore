@@ -66,5 +66,5 @@ flutter/pubspec.lock
 !flutter/assets/icon.png
 !flutter/assets/icon.svg
 !flutter/assets/rustdesk.png
-
+!flutter/windows/flutter/ephemeral/.plugin_symlinks/desktop_multi_window/windows/resources/app_icon.ico
 

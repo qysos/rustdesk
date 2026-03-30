@@ -2,12 +2,12 @@ lazy_static::lazy_static! {
 pub static ref T: std::collections::HashMap<&'static str, &'static str> =
     [
         ("Status", "状态"),
-        ("Your Desktop", "你的桌面"),
-        ("desk_tip", "你的桌面可以通过下面的 ID 和密码访问。"),
+        ("Your Desktop", "晴越数据恢复中心"), //你的桌面
+        ("desk_tip", "请将下方ID、密码内容区域拍照或截图，发给晴越数据恢复中心王工，谢谢支持。"), //你的桌面可以通过下面的 ID 和密码访问。//后期根据需要更改
         ("Password", "密码"),
-        ("Ready", "就绪"),
+        ("Ready", "晴越远程协助工具已就绪"), //就绪
         ("Established", "已建立"),
-        ("connecting_status", "正在接入 RustDesk 网络..."),
+        ("connecting_status", "正在接入 晴越数据恢复中心 网络..."), //正在接入 RustDesk 网络...
         ("Enable service", "允许服务"),
         ("Start service", "启动服务"),
         ("Service is running", "服务正在运行"),
@@ -43,8 +43,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("allowed characters", "使用允许的字符"),
         ("id_change_tip", "只可以使用字母 a-z, A-Z, 0-9, - (dash), _ (下划线)。首字母必须是 a-z, A-Z。长度在 6 与 16 之间。"),
         ("Website", "网站"),
-        ("About", "关于"),
-        ("Slogan_tip", "在这个混乱的世界中，用心制作！"),
+        ("About", "关于晴越数据恢复中心"),  //关于
+        ("Slogan_tip", "赤峰市松山区中昊大厦A座写字楼14楼18号房间  \n王国民  15548476600 "),   //在这个混乱的世界中，用心制作！
         ("Privacy Statement", "隐私声明"),
         ("Mute", "静音"),
         ("Build Date", "构建日期"),
@@ -73,7 +73,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Remember password", "记住密码"),
         ("Wrong Password", "密码错误"),
         ("Do you want to enter again?", "是否要再次输入？"),
-        ("Connection Error", "连接错误"),
+        ("Connection Error", "连接错误，请联系晴越数据恢复中心王工 0476-8493560 15548476600"),   //连接错误
         ("Error", "错误"),
         ("Reset by the peer", "连接被对方关闭"),
         ("Connecting...", "正在连接..."),
@@ -145,8 +145,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Failed to make direct connection to remote desktop", "无法直接连接到远程桌面"),
         ("Set Password", "设置密码"),
         ("OS Password", "操作系统密码"),
-        ("install_tip", "你正在运行未安装版本，由于 UAC 限制，作为被控端，会在某些情况下无法控制鼠标键盘，或者录制屏幕，请点击下面的按钮将 RustDesk 安装到系统，从而规避上述问题。"),
-        ("Click to upgrade", "点击这里升级"),
+        ("install_tip", "重要提示：请临时退出360卫士&杀毒等软件\n\n本公司从事多种存储设备的数据恢复业务【服务器、阵列设备、数据库、硬盘、优盘等】"),   //你正在运行未安装版本，由于 UAC 限制，作为被控端，会在某些情况下无法控制鼠标键盘，或者录制屏幕，请点击下面的按钮将 RustDesk 安装到系统，从而规避上述问题。
+        ("Click to upgrade", "无需升级"),   //点击这里升级
         ("Configure", "配置"),
         ("config_acc", "为了能够远程控制你的桌面, 请给予 RustDesk \"辅助功能\" 权限。"),
         ("config_screen", "为了能够远程访问你的桌面, 请给予 RustDesk \"屏幕录制\" 权限。"),
@@ -170,7 +170,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Local Port", "本地端口"),
         ("Local Address", "当前地址"),
         ("Change Local Port", "修改本地端口"),
-        ("setup_server_tip", "如果需要更快连接速度，你可以选择自建服务器"),
+        ("setup_server_tip", "晴越数据恢复中心24H:0476-8493560"), //如果需要更快连接速度，你可以选择自建服务器
         ("Too short, at least 6 characters.", "太短了，至少 6 个字符"),
         ("The confirmation is not identical.", "两次输入不匹配"),
         ("Permissions", "权限"),
@@ -625,7 +625,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("enable-bot-desc", "1. 开启与 @BotFather 的对话。\n2. 发送命令 \"/newbot\"。 您将在完成此步骤后收到权杖 (Token)。\n3. 开始与您刚创建的机器人的对话。发送一则以正斜杠 (\"/\") 开头的消息来启用它，例如 \"/hello\"。"),
         ("cancel-2fa-confirm-tip", "确定要取消双重认证吗？"),
         ("cancel-bot-confirm-tip", "确定要取消 Telegram 机器人吗？"),
-        ("About RustDesk", "关于 RustDesk"),
+        ("About RustDesk", "关于 晴越数据恢复中心"),    //关于 RustDesk
         ("Send clipboard keystrokes", "发送剪贴板按键"),
         ("network_error_tip", "请检查网络连接，然后点击再试"),
         ("Unlock with PIN", "使用 PIN 码解锁设置"),

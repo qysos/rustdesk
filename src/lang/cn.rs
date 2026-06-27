@@ -151,7 +151,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("config_acc", "为了能够远程控制你的桌面, 请给予 RustDesk \"辅助功能\" 权限。"),
         ("config_screen", "为了能够远程访问你的桌面, 请给予 RustDesk \"屏幕录制\" 权限。"),
         ("Installing ...", "安装中..."),
-        ("Install", "安装"),
+        ("Install", "截图拍照发王工"),    //"安装"
         ("Installation", "安装"),
         ("Installation Path", "安装路径"),
         ("Create start menu shortcuts", "创建启动菜单快捷方式"),

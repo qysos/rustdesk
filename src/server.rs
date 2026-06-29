@@ -67,6 +67,7 @@ pub mod input_service {
 }
 
 mod connection;
+mod login_failure_check;
 pub mod display_service;
 #[cfg(windows)]
 pub mod portable_service;
@@ -79,6 +80,12 @@ pub mod printer_service;
 
 pub type Childs = Arc<Mutex<Vec<std::process::Child>>>;
 type ConnMap = HashMap<i32, ConnInner>;
+
+#[derive(Clone, Default)]
+pub struct ConnectionMeta {
+    pub control_permissions: Option<ControlPermissions>,
+    pub controlled_context: Option<ControlledContext>,
+}
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 const CONFIG_SYNC_INTERVAL_SECS: f32 = 0.3;
@@ -162,7 +169,7 @@ async fn accept_connection_(
     server: ServerPtr,
     socket: Stream,
     secure: bool,
-    control_permissions: Option<ControlPermissions>,
+    meta: ConnectionMeta,
 ) -> ResultType<()> {
     let local_addr = socket.local_addr();
     drop(socket);
@@ -179,7 +186,7 @@ async fn accept_connection_(
             Stream::from(stream, stream_addr),
             addr,
             secure,
-            control_permissions,
+            meta,
         )
         .await?;
     }
@@ -191,7 +198,7 @@ pub async fn create_tcp_connection(
     stream: Stream,
     addr: SocketAddr,
     secure: bool,
-    control_permissions: Option<ControlPermissions>,
+    meta: ConnectionMeta,
 ) -> ResultType<()> {
     let mut stream = stream;
     let id = server.write().unwrap().get_new_id();
@@ -259,14 +266,7 @@ pub async fn create_tcp_connection(
         }
         log::info!("wake up macos");
     }
-    Connection::start(
-        addr,
-        stream,
-        id,
-        Arc::downgrade(&server),
-        control_permissions,
-    )
-    .await;
+    Connection::start(addr, stream, id, Arc::downgrade(&server), meta).await;
     Ok(())
 }
 
@@ -275,9 +275,9 @@ pub async fn accept_connection(
     socket: Stream,
     peer_addr: SocketAddr,
     secure: bool,
-    control_permissions: Option<ControlPermissions>,
+    meta: ConnectionMeta,
 ) {
-    if let Err(err) = accept_connection_(server, socket, secure, control_permissions).await {
+    if let Err(err) = accept_connection_(server, socket, secure, meta).await {
         log::warn!("Failed to accept connection from {}: {}", peer_addr, err);
     }
 }
@@ -289,7 +289,7 @@ pub async fn create_relay_connection(
     peer_addr: SocketAddr,
     secure: bool,
     ipv4: bool,
-    control_permissions: Option<ControlPermissions>,
+    meta: ConnectionMeta,
 ) {
     if let Err(err) = create_relay_connection_(
         server,
@@ -298,7 +298,7 @@ pub async fn create_relay_connection(
         peer_addr,
         secure,
         ipv4,
-        control_permissions,
+        meta,
     )
     .await
     {
@@ -318,7 +318,7 @@ async fn create_relay_connection_(
     peer_addr: SocketAddr,
     secure: bool,
     ipv4: bool,
-    control_permissions: Option<ControlPermissions>,
+    meta: ConnectionMeta,
 ) -> ResultType<()> {
     let mut stream = socket_client::connect_tcp(
         socket_client::ipv4_to_ipv6(crate::check_port(relay_server, RELAY_PORT), ipv4),
@@ -333,7 +333,7 @@ async fn create_relay_connection_(
         ..Default::default()
     });
     stream.send(&msg_out).await?;
-    create_tcp_connection(server, stream, peer_addr, secure, control_permissions).await?;
+    create_tcp_connection(server, stream, peer_addr, secure, meta).await?;
     Ok(())
 }
 
@@ -731,7 +731,7 @@ async fn sync_and_watch_config_dir(sync_done_tx: Option<tokio::sync::oneshot::Se
     use hbb_common::sleep;
     for i in 1..=tries {
         sleep(i as f32 * CONFIG_SYNC_INTERVAL_SECS).await;
-        match crate::ipc::connect(1000, "_service").await {
+        match crate::ipc::connect_service(1000).await {
             Ok(mut conn) => {
                 if !synced {
                     if conn.send(&Data::SyncConfig(None)).await.is_ok() {
@@ -772,6 +772,12 @@ async fn sync_and_watch_config_dir(sync_done_tx: Option<tokio::sync::oneshot::Se
                             };
                         };
                     }
+                    if !synced {
+                        log::warn!(
+                            "initial config sync from root failed, reconnecting to ipc_service"
+                        );
+                        continue;
+                    }
                 }
 
                 loop {
@@ -788,7 +794,7 @@ async fn sync_and_watch_config_dir(sync_done_tx: Option<tokio::sync::oneshot::Se
                         match conn.send(&Data::SyncConfig(Some(cfg.clone().into()))).await {
                             Err(e) => {
                                 log::error!("sync config to root failed: {}", e);
-                                match crate::ipc::connect(1000, "_service").await {
+                                match crate::ipc::connect_service(1000).await {
                                     Ok(mut _conn) => {
                                         conn = _conn;
                                         log::info!("reconnected to ipc_service");

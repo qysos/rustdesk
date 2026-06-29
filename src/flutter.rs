@@ -1135,6 +1135,10 @@ impl InvokeUiSession for FlutterHandler {
                     ("message", json!(&opened.message)),
                     ("pid", json!(opened.pid)),
                     ("service_id", json!(&opened.service_id)),
+                    (
+                        "replay_terminal_output",
+                        json!(opened.replay_terminal_output),
+                    ),
                 ];
                 if !opened.persistent_sessions.is_empty() {
                     event_data.push(("persistent_sessions", json!(opened.persistent_sessions)));
@@ -2291,6 +2295,16 @@ pub mod sessions {
     pub fn has_sessions_running(conn_type: ConnType) -> bool {
         SESSIONS.read().unwrap().iter().any(|((_, r#type), s)| {
             *r#type == conn_type && s.session_handlers.read().unwrap().len() != 0
+        })
+    }
+
+    #[inline]
+    #[cfg(not(target_os = "ios"))]
+    pub fn has_connected_sessions_running(conn_type: ConnType) -> bool {
+        SESSIONS.read().unwrap().iter().any(|((_, r#type), s)| {
+            *r#type == conn_type
+                && s.session_handlers.read().unwrap().len() != 0
+                && s.connection_round_state.lock().unwrap().is_connected()
         })
     }
 }

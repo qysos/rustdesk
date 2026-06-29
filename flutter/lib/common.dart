@@ -716,6 +716,17 @@ closeConnection({String? id}) {
       stateGlobal.isInMainPage = true;
     } else {
       final controller = Get.find<DesktopTabController>();
+      if (controller.tabType == DesktopTabType.terminal &&
+          controller.onCloseWindow != null) {
+        // Terminal windows are scoped to one peer. The optional id passed to
+        // closeConnection() is that peer id, not a terminal tab key
+        // (${peerId}_${terminalId}). Closing from terminal dialogs should close
+        // the peer's whole terminal window, including all terminal tabs.
+        unawaited(controller.onCloseWindow!().catchError((e, _) {
+          debugPrint('[closeConnection] Failed to close terminal window: $e');
+        }));
+        return;
+      }
       controller.closeBy(id);
     }
   }
@@ -2365,6 +2376,19 @@ List<String>? urlLinkToCmdArgs(Uri uri) {
     id = uri.path.substring("/new/".length);
   } else if (uri.authority == "config") {
     if (isAndroid || isIOS) {
+      final allowDeepLinkServerSettings =
+          bind.mainGetBuildinOption(key: kOptionAllowDeepLinkServerSettings) ==
+              'Y';
+      if (!allowDeepLinkServerSettings) {
+        debugPrint(
+            "Ignore rustdesk://config because $kOptionAllowDeepLinkServerSettings is not enabled.");
+        // Keep the user-facing error generic; detailed rejection reason is in debug logs.
+        // Delay toast to avoid missing overlay during cold-start deeplink handling.
+        Timer(Duration(seconds: 1), () {
+          showToast(translate('Failed'));
+        });
+        return null;
+      }
       final config = uri.path.substring("/".length);
       // add a timer to make showToast work
       Timer(Duration(seconds: 1), () {
@@ -2374,6 +2398,18 @@ List<String>? urlLinkToCmdArgs(Uri uri) {
     return null;
   } else if (uri.authority == "password") {
     if (isAndroid || isIOS) {
+      final allowDeepLinkPassword =
+          bind.mainGetBuildinOption(key: kOptionAllowDeepLinkPassword) == 'Y';
+      if (!allowDeepLinkPassword) {
+        debugPrint(
+            "Ignore rustdesk://password because $kOptionAllowDeepLinkPassword is not enabled.");
+        // Keep the user-facing error generic; detailed rejection reason is in debug logs.
+        // Delay toast to avoid missing overlay during cold-start deeplink handling.
+        Timer(Duration(seconds: 1), () {
+          showToast(translate('Failed'));
+        });
+        return null;
+      }
       final password = uri.path.substring("/".length);
       if (password.isNotEmpty) {
         Timer(Duration(seconds: 1), () async {
@@ -3677,14 +3713,54 @@ Widget loadPowered(BuildContext context) {
   ).marginOnly(top: 6);
 }
 
-// max 300 x 60
-Widget loadLogo() {
-  return FutureBuilder<ByteData>(
-      future: rootBundle.load('assets/logo.png'),
-      builder: (BuildContext context, AsyncSnapshot<ByteData> snapshot) {
-        if (snapshot.hasData) {
+const _kDefaultLogoAsset = 'assets/logo.png';
+const _kLightLogoAsset = 'assets/logo_light.png';
+const _kDarkLogoAsset = 'assets/logo_dark.png';
+
+List<String> _logoAssetCandidatesForBrightness(Brightness brightness) {
+  return brightness == Brightness.dark
+      ? [_kDarkLogoAsset, _kDefaultLogoAsset]
+      : [_kLightLogoAsset, _kDefaultLogoAsset];
+}
+
+Future<String?> _resolveLogoAsset(Brightness brightness) async {
+  for (final asset in _logoAssetCandidatesForBrightness(brightness)) {
+    try {
+      await rootBundle.load(asset);
+      return asset;
+    } on FlutterError {
+      continue;
+    }
+  }
+  return null;
+}
+
+class _Logo extends StatefulWidget {
+  const _Logo();
+
+  @override
+  State<_Logo> createState() => _LogoState();
+}
+
+class _LogoState extends State<_Logo> {
+  final Map<Brightness, Future<String?>> _logoFutures = {};
+
+  Future<String?> _logoFutureFor(Brightness brightness) {
+    return _logoFutures.putIfAbsent(
+      brightness,
+      () => _resolveLogoAsset(brightness),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<String?>(
+      future: _logoFutureFor(Theme.of(context).brightness),
+      builder: (BuildContext context, AsyncSnapshot<String?> snapshot) {
+        final asset = snapshot.data;
+        if (asset != null) {
           final image = Image.asset(
-            'assets/logo.png',
+            asset,
             fit: BoxFit.contain,
             errorBuilder: (ctx, error, stackTrace) {
               return Container();
@@ -3696,8 +3772,13 @@ Widget loadLogo() {
           ).marginOnly(left: 12, right: 12, top: 12);
         }
         return const Offstage();
-      });
+      },
+    );
+  }
 }
+
+// max 300 x 60
+Widget loadLogo() => const _Logo();
 
 Widget loadIcon(double size) {
   return Image.asset('assets/icon.png',
@@ -4154,8 +4235,7 @@ Widget? buildAvatarWidget({
       width: size,
       height: size,
       fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) =>
-          fallback ?? SizedBox.shrink(),
+      errorBuilder: (_, __, ___) => fallback ?? SizedBox.shrink(),
     ),
   );
 }
